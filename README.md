@@ -2,6 +2,14 @@
 
 An R based tool that uses Open-AIs whisper to create transcripts from audio.
 
+See here https://github.com/openai/whisper for troubleshooting.
+
+It needs Python + the Open-AI library.
+```
+pip install -U openai-whisper
+```
+
+
 
 It needs ffmpeg to understand different audio formats.
 ```
