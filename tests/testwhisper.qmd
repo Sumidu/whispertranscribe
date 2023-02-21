@@ -1,0 +1,18 @@
+---
+title: "Whisper Synch"
+---
+
+## Quarto
+
+```{python}
+import whisper
+model = whisper.load_model("medium")
+model.detect_language("230220_2136.mp3")
+out = model.transcribe("230220_2136.mp3")
+out
+```
+
+```{python}
+
+out["text"]
+```
