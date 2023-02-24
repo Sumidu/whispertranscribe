@@ -15,7 +15,7 @@ for(filein in file_in_list){
   for (model_name in selected_models){
     start_time <- Sys.time()
     model <- whisper$load_model(model_name)
-    out = model$transcribe(filein)
+    out = model$transcribe(paste0("input/",filein))
     output <- out["text"]$text
     
     results <- c("test")
