@@ -1,10 +1,10 @@
 # whispertranscribe
 
-An R based tool that uses Open-AIs whisper to create transcripts from audio.
+An R-based tool that uses Open-AIs `whisper` to create transcripts from audio.
 
 ## Shiny app and R-file
 
-There are two ways how to use whispertranscribe. Please see the requirements
+There are two ways how to use `WhisperTranscribe`. Please see the requirements
 first, before running the applications.
 
 ### 1. Shiny Application
