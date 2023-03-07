@@ -9,6 +9,7 @@ seconds_to_timecode <- function(s){
   if(s < 0) {
     warning("Negative seconds cannot be converted to a timecode.")
   }
+  # use modulo and division to extract hh:mm:ss
   seconds <- s %% 60
   s <- (s - seconds) / 60
   minutes <- s %% 60
