@@ -428,6 +428,16 @@
         "withr"
       ]
     },
+    "gdata": {
+      "Package": "gdata",
+      "Version": "2.18.0.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "8c86ee4c7aa7dd31ef0a28b28649bde4",
+      "Requirements": [
+        "gtools"
+      ]
+    },
     "generics": {
       "Package": "generics",
       "Version": "0.1.3",
@@ -517,6 +527,14 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "36b4265fb818f6a342bed217549cd896",
+      "Requirements": []
+    },
+    "gtools": {
+      "Package": "gtools",
+      "Version": "3.9.4",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "88bb96eaf7140cdf29e374ef74182220",
       "Requirements": []
     },
     "haven": {
@@ -1118,6 +1136,18 @@
         "sourcetools",
         "withr",
         "xtable"
+      ]
+    },
+    "shinyjs": {
+      "Package": "shinyjs",
+      "Version": "2.1.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "802e4786b353a4bb27116957558548d5",
+      "Requirements": [
+        "digest",
+        "jsonlite",
+        "shiny"
       ]
     },
     "sourcetools": {
