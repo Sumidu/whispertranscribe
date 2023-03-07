@@ -1,11 +1,14 @@
 library(tidyverse)
 library(reticulate)
 library(lubridate)
+
+
+use_virtualenv("r-reticulate")
 # load whisper
 whisper <- import("whisper")
 model_list <- whisper$available_models()
 message(paste("The following models are available:", paste(model_list, collapse = ", ")))
-selected_models <- c("small")
+selected_models <- c("medium")
 
 
 file_in_list <- dir("input", pattern = ".mp3")
