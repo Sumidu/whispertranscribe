@@ -8,29 +8,60 @@
 #
 
 library(shiny)
+library(shinyjs)
+library(gdata)
+maxsize <- 50 * 1024^2
+options(shiny.maxRequestSize = maxsize)
 library(reticulate)
+use_virtualenv("r-reticulate")
 whisper <- import("whisper")
-model <- whisper$load_model("small")
+modellist <- whisper$available_models()
+
+withConsoleRedirect <- function(containerId, expr) {
+  # Change type="output" to type="message" to catch stderr
+  # (messages, warnings, and errors) instead of stdout.
+  txt <- py_capture_output(results <- expr, type = c("stdout", "stderr"))
+  if (length(txt) > 0) {
+    insertUI(paste0("#", containerId), where = "beforeEnd",
+             ui = paste0(txt, "\n", collapse = "")
+    )
+  }
+  results
+}
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
-
+    shinyjs::useShinyjs(),
     # Application title
-    titlePanel("Old Faithful Geyser Data"),
+    titlePanel("OpenAI - Whisper - Shiny app"),
 
     # Sidebar with a slider input for number of bins 
     sidebarLayout(
         sidebarPanel(
-            sliderInput("bins",
-                        "Number of bins:",
-                        min = 1,
-                        max = 50,
-                        value = 30)
+       
+          h2("Instructions"),
+          p(strong("Step 1:"), paste("Load a model. Models are cached locally after the first download.",
+                  "Larger models take longer to download (e.g., small = 250 MB, medium = 750 MB, large = 1.5 GB)")),
+          p(a(href="https://github.com/openai/whisper", "Click here for more details.", target="_blank")),
+          p(strong("Step 2:"), paste("Then select an audio-file to upload (.mp3). File size limit:", gdata::humanReadable(maxsize))),
+          p(strong("Step 3:"), paste("Last click on transcribe. Larger models take longer for transcription.")),
+          p("You can change the model without changing the audio, to try different results."),
+          br(),
+          #pre(id = "console"),
+          br(),
+          selectInput("selected_model", "Select a model", choices = modellist,selected = "tiny"),
+          actionButton("loadmodel", "Load model", icon = icon("download")),br(),br(),
+          fileInput("audiofile", "Choose an audio file",
+                    multiple = FALSE,
+                    accept = c(".mp3")),
+          actionButton("transcribe", "Transcribe Audio", icon = icon("ear-listen")),
+          br()
         ),
 
         # Show a plot of the generated distribution
         mainPanel(
-          textOutput("result")
+          h2("Transcription output"),
+          verbatimTextOutput("result")
           
         )
     )
@@ -38,10 +69,55 @@ ui <- fluidPage(
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
-  #use_virtualenv("shinyenv")
+
+  # prepare the UI
+  shinyjs::disable("transcribe")
+  model <- reactiveVal(NULL)
+  text_output <- reactiveVal("")
+  
+  # actionbutton load ----
+  observeEvent(input$loadmodel, {
+    withProgress(message = 'Loading Model', value = 0, {
+      incProgress(0.25, detail = paste("Loading model", input$selected_model, "This may take a while"))
+      
+      # load the model into the reactive val
+      model(whisper$load_model(input$selected_model))
+      
+      incProgress(1, detail = paste("Model loaded"))
+    })
+    shinyjs::enable("transcribe")
+  })
+  
+  # actionbutton transcribe ----
+  observeEvent(input$transcribe, {
+    req(input$audiofile)
+    req(model)
+    tryCatch(
+      {
+        #model <- whisper$load_model("small")
+        withProgress(message = 'Loading Model', value = 0, {
+          
+          incProgress(0.25, detail = paste("Transcribing Audio", input$selected_model, "This may take a while"))
+          
+          # transcribe the audio
+          out <- model()$transcribe(input$audiofile$datapath)
+          
+          incProgress(1, detail = paste("Transcription finished..."))
+        })
+      },
+      error = function(e) {
+        # return a safeError if a parsing error occurs
+        stop(safeError(e))
+      }
+    )
+    
+    #write the reactive value
+    text_output(out["text"]$text)
+  })
+  
+  
   output$result <- renderText({
-    out <- model$transcribe("230220_2136.mp3")
-    out["text"]
+    text_output()    
   })
 }
 
