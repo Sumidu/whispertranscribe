@@ -136,7 +136,7 @@ server <- function(input, output) {
     req(input$audiofile)
     req(model())
     
-    source_python("../detectlang.py")
+    source_python("../python/detectlang.py")
     withProgress(message = 'Detecting Language', value = 0, {
       incProgress(0.25, detail = paste("Language detection using", input$selected_model, "\nThis should not take too long."))
       probs <- detectlang(input$audiofile$datapath, model())
