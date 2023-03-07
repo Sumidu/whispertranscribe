@@ -13,8 +13,11 @@ load.
 
 
 ### R-File
-The file `transcribe.R` converts all 
+The file `transcribe.R` converts all file with the provided extension in the
+input folder into transcripts in the output folder.
 
+
+## Requirements
 
 See here https://github.com/openai/whisper for troubleshooting.
 
