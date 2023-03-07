@@ -7,16 +7,31 @@
 #    http://shiny.rstudio.com/
 #
 
+
+
 library(shiny)
 library(shinyjs)
 library(gdata)
-maxsize <- 50 * 1024^2
-options(shiny.maxRequestSize = maxsize)
 library(reticulate)
+
+# configuring maximung size of audio-file
+maxsize <- 50 * 1024^2 # 50 MB
+options(shiny.maxRequestSize = maxsize)
+
+# cancel startup if virtual environment does not exist.
+if(!reticulate::virtualenv_exists("r-reticulate")){
+  stop("Please setup the python virtual environment first. See setup.r.")
+}
+
 use_virtualenv("r-reticulate")
+
+# load whisper and get list of models
 whisper <- import("whisper")
 modellist <- whisper$available_models()
 
+
+# utility function for debugging python output 
+# currently not used, as no live output possible :-/
 withConsoleRedirect <- function(containerId, expr) {
   # Change type="output" to type="message" to catch stderr
   # (messages, warnings, and errors) instead of stdout.
@@ -61,6 +76,7 @@ ui <- fluidPage(
         # Show a plot of the generated distribution
         mainPanel(
           h2("Transcription output"),
+          textOutput("language"),
           verbatimTextOutput("result")
           
         )
@@ -115,6 +131,21 @@ server <- function(input, output) {
     text_output(out["text"]$text)
   })
   
+  
+  output$language <- renderText({
+    req(input$audiofile)
+    req(model())
+    
+    source_python("../detectlang.py")
+    withProgress(message = 'Detecting Language', value = 0, {
+      incProgress(0.25, detail = paste("Language detection using", input$selected_model, "\nThis should not take too long."))
+      probs <- detectlang(input$audiofile$datapath, model())
+      incProgress(1, detail = paste("Done."))
+    })
+    lang <- names(probs[which.max(probs)])
+    
+    paste("Detected language:", lang)
+  })
   
   output$result <- renderText({
     text_output()    
