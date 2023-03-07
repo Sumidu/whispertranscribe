@@ -13,21 +13,32 @@ library(shiny)
 library(shinyjs)
 library(gdata)
 library(reticulate)
+library(howler)
+source("../R/timecodes.R")
 
 # configuring maximung size of audio-file
 maxsize <- 50 * 1024^2 # 50 MB
 options(shiny.maxRequestSize = maxsize)
 
+# python environment
+env_name <- "r-whispertranscribe"
+
 # cancel startup if virtual environment does not exist.
-if(!reticulate::virtualenv_exists("r-reticulate")){
+if(!reticulate::virtualenv_exists(env_name)){
   stop("Please setup the python virtual environment first. See setup.r.")
 }
 
-use_virtualenv("r-reticulate")
+use_virtualenv(env_name)
 
 # load whisper and get list of models
 whisper <- import("whisper")
 modellist <- whisper$available_models()
+
+
+audio_files_dir <- here::here("WhisperTranscribe","audio")
+addResourcePath("sample_audio", audio_files_dir)
+audio_files <- file.path("sample_audio", list.files(audio_files_dir, ".mp3$"))
+
 
 
 # utility function for debugging python output 
@@ -56,7 +67,7 @@ ui <- fluidPage(
        
           h2("Instructions"),
           p(strong("Step 1:"), paste("Load a model. Models are cached locally after the first download.",
-                  "Larger models take longer to download (e.g., small = 250 MB, medium = 750 MB, large = 1.5 GB)")),
+                  "Larger models take longer to download (e.g., base = 150 MB, small = 500 MB, medium = 1.5 GB, large = 2.8 GB)")),
           p(a(href="https://github.com/openai/whisper", "Click here for more details.", target="_blank")),
           p(strong("Step 2:"), paste("Then select an audio-file to upload (.mp3). File size limit:", gdata::humanReadable(maxsize))),
           p(strong("Step 3:"), paste("Last click on transcribe. Larger models take longer for transcription.")),
@@ -68,13 +79,18 @@ ui <- fluidPage(
           actionButton("loadmodel", "Load model", icon = icon("download")),br(),br(),
           fileInput("audiofile", "Choose an audio file",
                     multiple = FALSE,
-                    accept = c(".mp3")),
+                    accept = c(".mp3", "audio/mpeg", "audio/mp4", "audio/vnd.wav")),
+          checkboxInput("timecodes", "Use timecodes"),
           actionButton("transcribe", "Transcribe Audio", icon = icon("ear-listen")),
           br()
         ),
 
         # Show a plot of the generated distribution
         mainPanel(
+          
+          # ACV: TODO put back in
+          #h2("Audio"),
+          #howlerModuleUI(id = "sound", audio_files),
           h2("Transcription output"),
           textOutput("language"),
           verbatimTextOutput("result")
@@ -83,23 +99,37 @@ ui <- fluidPage(
     )
 )
 
-# Define server logic required to draw a histogram
-server <- function(input, output) {
+# Server ----
+server <- function(input, output, session) {
+  
+  
+  observe({
+    req(FALSE)
+    req(input$audiofile)
+    
+      cat(paste("Workingfile:", input$audiofile$datapath))
+      addResourcePath("upload_audio", dirname(input$audiofile$datapath))
+      
+      # ACV TODO: fix uploaded audio
+      howler::addTrack("sound", paste0("upload_audio/", basename(input$audiofile$datapath)))
+      
+    })
+  
 
-  # prepare the UI
+  # prepare the UI ----
   shinyjs::disable("transcribe")
   model <- reactiveVal(NULL)
-  text_output <- reactiveVal("")
+  text_output <- reactiveVal(NULL)
   
   # actionbutton load ----
   observeEvent(input$loadmodel, {
-    withProgress(message = 'Loading Model', value = 0, {
-      incProgress(0.25, detail = paste("Loading model", input$selected_model, "This may take a while"))
+    withProgress(message = paste('Loading Model:',input$selected_model), value = 0, {
+      incProgress(0.25, detail = paste("Loading bar will not move. This may take a while."))
       
       # load the model into the reactive val
       model(whisper$load_model(input$selected_model))
       
-      incProgress(1, detail = paste("Model loaded"))
+      incProgress(1, detail = paste("Model loaded."))
     })
     shinyjs::enable("transcribe")
   })
@@ -108,12 +138,13 @@ server <- function(input, output) {
   observeEvent(input$transcribe, {
     req(input$audiofile)
     req(model)
+
     tryCatch(
       {
         #model <- whisper$load_model("small")
-        withProgress(message = 'Loading Model', value = 0, {
+        withProgress(message = paste('Transcribing using model:',input$selected_model), value = 0, {
           
-          incProgress(0.25, detail = paste("Transcribing Audio", input$selected_model, "This may take a while"))
+          incProgress(0.25, detail = paste("Loading bar will not move. This may take a while"))
           
           # transcribe the audio
           out <- model()$transcribe(input$audiofile$datapath)
@@ -128,9 +159,13 @@ server <- function(input, output) {
     )
     
     #write the reactive value
-    text_output(out["text"]$text)
+    text_output(out)
   })
   
+  output$player <- renderUI({
+    req(input$audiofile)
+    tags$audio(src = input$audiofile$datapath, type = "audio/mpeg", autoplay = NA, controls = NA)
+  })
   
   output$language <- renderText({
     req(input$audiofile)
@@ -138,7 +173,7 @@ server <- function(input, output) {
     
     source_python("../python/detectlang.py")
     withProgress(message = 'Detecting Language', value = 0, {
-      incProgress(0.25, detail = paste("Language detection using", input$selected_model, "\nThis should not take too long."))
+      incProgress(0.25, detail = paste0("Using model: ", input$selected_model, ". This should not take too long."))
       probs <- detectlang(input$audiofile$datapath, model())
       incProgress(1, detail = paste("Done."))
     })
@@ -147,8 +182,28 @@ server <- function(input, output) {
     paste("Detected language:", lang)
   })
   
+  # rendering our transcription result ----
   output$result <- renderText({
-    text_output()    
+    res <- ""
+    if(!is.null(text_output())){
+      if(input$timecodes) {
+        out <- text_output()$segments
+        
+        results <- c()
+        
+        for(i in 1:length(out)){
+          
+          start <- seconds_to_timecode( out[[i]]$start )
+          end <- seconds_to_timecode( out[[i]]$end )
+          segment_text <- out[[i]]$text
+          results <- c(results, paste0(start, "-", end, ": ", stringr::str_wrap(segment_text), "\n"))
+        }
+        res <- results
+      } else {
+        res <- stringr::str_wrap(text_output()["text"]$text)
+      }
+    }
+    res
   })
 }
 

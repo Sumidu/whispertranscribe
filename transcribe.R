@@ -15,8 +15,8 @@ output_suffix <- ""
 # medium is a good model for transcribing non-english audio
 selected_models <- c("tiny")  
 
-
-
+# python environment
+env_name <- "r-whispertranscribe"
 
 
 
@@ -28,12 +28,13 @@ selected_models <- c("tiny")
 library(tidyverse)
 library(reticulate)
 library(lubridate)
+library(av)
 
 # cancel startup if virtual environment does not exist.
-if(!reticulate::virtualenv_exists("r-reticulate")){
+if(!reticulate::virtualenv_exists(env_name)){
   stop("Please setup the python virtual environment first. See setup.r.")
 }
-use_virtualenv("r-reticulate")
+use_virtualenv(env_name)
 
 source("R/timecodes.R")
 
@@ -53,7 +54,8 @@ for(filein in file_in_list){
   dot_positions <- str_locate_all(filein, "\\.")[[1]]
   dot_pos <- dot_positions[nrow(dot_positions),1]
   fileout <- paste0("output/", output_prefix, str_sub(filein, 1, dot_pos - 1), output_suffix)
-  message(paste("Now transcribing file:", filein, "Output file:", fileout))
+  info <- av::av_media_info(paste0("input/",filein))
+  message(paste0("Now transcribing file: ", filein, " - Output file: ", fileout, " - File length:", info$duration %>% as.duration()))
   
   # run all individual models
   for (model_name in selected_models){
@@ -61,8 +63,10 @@ for(filein in file_in_list){
     
     # load the model
     model <- whisper$load_model(model_name)
+    
     # __transcribe the current item ----
     out = model$transcribe(paste0("input/",filein))
+    
     output <- out["text"]$text
     
     # convert individual segments with time codes
@@ -79,7 +83,7 @@ for(filein in file_in_list){
     
     # write time to stdout
     end_time <- Sys.time()
-    message(paste("Transcription took", as.period(end_time-start_time)))
+    message(paste("Transcription took", as.duration(end_time-start_time)))
   }
 }
 
