@@ -8,11 +8,12 @@ file_types <- ".mp3"
 
 # file prefix for output files
 output_prefix <- "tr_"
-# file extension for output files (raw text)
-output_extension <- ".txt"
+# file suffix after initial_file for output files (raw text)
+output_suffix <- ""
 
 # default models to use (can be a vector)
-selected_models <- c("medium")
+# medium is a good model for transcribing non-english audio
+selected_models <- c("tiny")  
 
 
 
@@ -34,6 +35,7 @@ if(!reticulate::virtualenv_exists("r-reticulate")){
 }
 use_virtualenv("r-reticulate")
 
+source("R/timecodes.R")
 
 # load whisper
 whisper <- import("whisper")
@@ -47,7 +49,10 @@ message(paste("Converting", length(file_in_list), "files..."))
 # _iterate over all files ----
 for(filein in file_in_list){
   #generate output name
-  fileout <- paste0("output/", output_prefix, str_sub(filein, 1, -4), output_extension)
+  # find the . in the filename 
+  dot_positions <- str_locate_all(filein, "\\.")[[1]]
+  dot_pos <- dot_positions[nrow(dot_positions),1]
+  fileout <- paste0("output/", output_prefix, str_sub(filein, 1, dot_pos - 1), output_suffix)
   message(paste("Now transcribing file:", filein, "Output file:", fileout))
   
   # run all individual models
@@ -61,12 +66,12 @@ for(filein in file_in_list){
     output <- out["text"]$text
     
     # convert individual segments with time codes
-    results <- c("")
+    results <- c()
     for(i in 1:length(out$segments)){
-      start <- out$segments[[i]]$start %>% as.period()
-      end <- out$segments[[i]]$end %>% as.period()
-      seg <- out$segments[[i]]$text
-      results <- c(results, paste0(start, "-", end, ":", seg))
+      start <- out$segments[[i]]$start %>% seconds_to_timecode()
+      end <- out$segments[[i]]$end %>% seconds_to_timecode()
+      segment_text <- out$segments[[i]]$text
+      results <- c(results, paste0(start, "-", end, ":", segment_text))
     }
     
     write_lines(results, paste0(fileout, "_", model_name, "_bysegments.txt"))
@@ -78,4 +83,5 @@ for(filein in file_in_list){
   }
 }
 
+message("Done.")
 
