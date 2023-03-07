@@ -4,31 +4,35 @@ An R based tool that uses Open-AIs whisper to create transcripts from audio.
 
 ## Shiny app and R-file
 
-There are two ways how to use whispertranscribe.
+There are two ways how to use whispertranscribe. Please see the requirements
+first, before running the applications.
 
-### Shiny Application
+### 1. Shiny Application
 There is a shiny application in the `WhisperTranscribe` sub-folder. The app is 
 located in the single `app.R` file. By running this file the shiny app should 
 load.
 
 
-### R-File
+### 2. R-File
 The file `transcribe.R` converts all file with the provided extension in the
 input folder into transcripts in the output folder.
 
 
 ## Requirements
 
-See here https://github.com/openai/whisper for troubleshooting.
+WhisperTranscribe needs Python + the Open-AI library. The setup file should 
+install both of these.
+If you don't want to use the sandbox environment of reticulate you can install 
+the required library using pip as follows:
 
-It needs Python + the Open-AI library.
 ```
 pip install -U openai-whisper
 ```
 
+### Troubleshooting
+See here https://github.com/openai/whisper for extended troubleshooting.
 
-
-It needs ffmpeg to understand different audio formats.
+Whisper needs `ffmpeg` to understand different audio formats.
 ```
 # on Ubuntu or Debian
 sudo apt update && sudo apt install ffmpeg
