@@ -66,6 +66,11 @@ certifi <- reticulate::import("certifi")
 # if not and in RStudio, check under Global options whether the correct virtual env 
 # is activated
 
+# test
+model <- whisper$load_model("tiny")
+out <- whisper$transcribe(model, "input/test.mp3")
+out[["text"]]$text
+
 
 # Common errors ----
 ## Here are some common errors that can happen 
