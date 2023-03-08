@@ -15,10 +15,13 @@ output_suffix <- ""
 # medium is a good model for transcribing non-english audio
 selected_models <- c("tiny")  
 
+
+
+# calls config from yaml
+config <- config::get()
+config$package_manager
 # python environment
-env_name <- "r-whispertranscribe"
-
-
+env_name <- config$env_name
 
 
 
@@ -30,11 +33,22 @@ library(reticulate)
 library(lubridate)
 library(av)
 
-# cancel startup if virtual environment does not exist.
-if(!reticulate::virtualenv_exists(env_name)){
-  stop("Please setup the python virtual environment first. See setup.r.")
+# flexible package manager
+if(config$package_manager=="conda"){
+  message("Using conda...")
+  if(conda_list() %>% filter(name==env_name) %>% nrow() < 0){
+    stop("Please setup the python virtual environment first. See setup.r.")
+  }
+  use_condaenv(env_name)  
+} else {
+  message("Using virtualenv...")
+  # cancel startup if virtual environment does not exist.
+  if(!reticulate::virtualenv_exists(env_name)){
+    stop("Please setup the python virtual environment first. See setup.r.")
+  }
+  use_virtualenv(env_name)
 }
-use_virtualenv(env_name)
+
 
 source("R/timecodes.R")
 

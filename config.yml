@@ -1,0 +1,10 @@
+# Configuration file
+default:
+  package_manager: "conda"
+  env_name: "r-whispertranscribe"
+  shiny_file_size_limit: 50 # in megabyte
+
+production:
+  package_manager: "virtualenv"
+  env_name: "r-whispertranscribe"
+  shiny_file_size_limit: 50 # in megabyte

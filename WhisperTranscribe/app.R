@@ -10,25 +10,38 @@
 
 
 library(shiny)
+library(shinydashboard)
 library(shinyjs)
 library(gdata)
 library(reticulate)
 library(howler)
 source("../R/timecodes.R")
 
+# calls config from yaml
+config <- config::get()
+
 # configuring maximung size of audio-file
-maxsize <- 50 * 1024^2 # 50 MB
+maxsize <- config$shiny_file_size_limit * 1024^2 # 50 MB
 options(shiny.maxRequestSize = maxsize)
 
 # python environment
-env_name <- "r-whispertranscribe"
+env_name <- config$env_name
 
-# cancel startup if virtual environment does not exist.
-if(!reticulate::virtualenv_exists(env_name)){
-  stop("Please setup the python virtual environment first. See setup.r.")
+# flexible package manager
+if(config$package_manager=="conda"){
+  message("Using conda...")
+  if(conda_list() %>% filter(name==env_name) %>% nrow() < 0){
+    stop("Please setup the python virtual environment first. See setup.r.")
+  }
+  use_condaenv(env_name)  
+} else {
+  message("Using virtualenv...")
+  # cancel startup if virtual environment does not exist.
+  if(!reticulate::virtualenv_exists(env_name)){
+    stop("Please setup the python virtual environment first. See setup.r.")
+  }
+  use_virtualenv(env_name)
 }
-
-use_virtualenv(env_name)
 
 # load whisper and get list of models
 whisper <- import("whisper")
@@ -55,38 +68,38 @@ withConsoleRedirect <- function(containerId, expr) {
 }
 
 # Define UI for application that draws a histogram
-ui <- fluidPage(
+ui <- dashboardPage(
+  dashboardHeader(title = "WhisperTranscribe"),
+  dashboardSidebar(disable = TRUE),
+  dashboardBody(
     shinyjs::useShinyjs(),
-    # Application title
-    titlePanel("OpenAI - Whisper - Shiny app"),
 
     # Sidebar with a slider input for number of bins 
-    sidebarLayout(
-        sidebarPanel(
-       
-          h2("Instructions"),
-          p(strong("Step 1:"), paste("Load a model. Models are cached locally after the first download.",
-                  "Larger models take longer to download (e.g., base = 150 MB, small = 500 MB, medium = 1.5 GB, large = 2.8 GB)")),
-          p(a(href="https://github.com/openai/whisper", "Click here for more details.", target="_blank")),
-          p(strong("Step 2:"), paste("Then select an audio-file to upload (.mp3). File size limit:", gdata::humanReadable(maxsize))),
-          p(strong("Step 3:"), paste("Last click on transcribe. Larger models take longer for transcription.")),
-          p("You can change the model without changing the audio, to try different results. The small model is a usable version."),
-          br(),
-          #pre(id = "console"),
-          br(),
-          selectInput("selected_model", "Select a model", choices = modellist,selected = "tiny"),
-          actionButton("loadmodel", "Load model", icon = icon("download")),br(),br(),
-          fileInput("audiofile", "Choose an audio file",
-                    multiple = FALSE,
-                    accept = c(".mp3", "audio/mpeg", "audio/mp4", "audio/vnd.wav")),
-          checkboxInput("timecodes", "Use timecodes"),
-          actionButton("transcribe", "Transcribe Audio", icon = icon("ear-listen")),
-          br()
+    fluidRow(
+        # settings box ----
+        box(width = 4,
+            h2("Instructions"),
+            p(strong("Step 1:"), paste("Load a model. Models are cached locally after the first download.",
+                    "Larger models take longer to download (e.g., base = 150 MB, small = 500 MB, medium = 1.5 GB, large = 2.8 GB)")),
+            p(a(href="https://github.com/openai/whisper", "Click here for more details.", target="_blank")),
+            p(strong("Step 2:"), paste("Then select an audio-file to upload (.mp3). File size limit:", gdata::humanReadable(maxsize))),
+            p(strong("Step 3:"), paste("Last click on transcribe. Larger models take longer for transcription.")),
+            p("You can change the model without changing the audio, to try different results. The small model is a usable version."),
+            br(),
+            #pre(id = "console"),
+            br(),
+            selectInput("selected_model", "Select a model", choices = modellist,selected = "tiny"),
+            actionButton("loadmodel", "Load model", icon = icon("download")),br(),br(),
+            fileInput("audiofile", "Choose an audio file",
+                      multiple = FALSE,
+                      accept = c(".mp3", "audio/mpeg", "audio/mp4", "audio/vnd.wav", "audio/*")),
+            checkboxInput("timecodes", "Use timecodes"),
+            actionButton("transcribe", "Transcribe Audio", icon = icon("ear-listen")),
+            br()
         ),
-
-        # Show a plot of the generated distribution
-        mainPanel(
-          
+        
+        # output box ----
+        box(width = 8,
           # ACV: TODO put back in
           h2("Audio"),
           div(
@@ -117,9 +130,13 @@ ui <- fluidPage(
           h2("Transcription output"),
           textOutput("language"),
           verbatimTextOutput("result", placeholder = TRUE)
-          
-        )
+      ),
+      # debug box ----
+      box(width=8, collapsible = TRUE, title = "Debug information", collapsed = TRUE,
+          verbatimTextOutput("debug")
+          )
     )
+  )
 )
 
 # Server ----
@@ -256,6 +273,20 @@ server <- function(input, output, session) {
       }
     }
     res
+  })
+  
+  
+  
+  output$debug <- renderText({
+    conf <- py_config()
+    packs <- py_list_packages()
+    
+    print_conf <- capture.output(print(conf))
+    print_packs <- capture.output(print(packs))
+    paste(
+      paste(print_conf, collapse = "\n"), "\n\nPackage info:\n\n",
+      paste(print_packs, collapse = "\n")
+    )
   })
 }
 
