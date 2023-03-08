@@ -42,8 +42,8 @@ virtualenv_create(env_name)
 # install whisper and certifi
 virtualenv_install(env_name, "openai-whisper", pip_options = "-U")
 virtualenv_install(env_name, "certifi", pip_options = "-U")
-virtualenv_install(env_name, "ffmpeg-python", pip_options = "-U")
-virtualenv_install(env_name, "ffmpeg", pip_options = "-U")
+#virtualenv_install(env_name, "ffmpeg-python", pip_options = "-U")
+#virtualenv_install(env_name, "ffmpeg", pip_options = "-U")
 
 
 # Check if on MacOS (if so installing tensworflow for mac could unlock GPU)

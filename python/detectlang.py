@@ -10,4 +10,8 @@ def detectlang(file, model):
   return probs
 
 
-#detectlang("../input/test.mp3", whisper.load_model("tiny"))
+# for testing
+#
+# import whisper
+# probs = detectlang("../input/test.mp3", whisper.load_model("tiny"))
+# print(probs)
