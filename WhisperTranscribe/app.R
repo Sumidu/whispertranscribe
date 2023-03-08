@@ -38,7 +38,7 @@ modellist <- whisper$available_models()
 audio_files_dir <- here::here("WhisperTranscribe","audio")
 addResourcePath("sample_audio", audio_files_dir)
 audio_files <- file.path("sample_audio", list.files(audio_files_dir, ".mp3$"))
-
+message(audio_files)
 
 
 # utility function for debugging python output 
@@ -71,7 +71,7 @@ ui <- fluidPage(
           p(a(href="https://github.com/openai/whisper", "Click here for more details.", target="_blank")),
           p(strong("Step 2:"), paste("Then select an audio-file to upload (.mp3). File size limit:", gdata::humanReadable(maxsize))),
           p(strong("Step 3:"), paste("Last click on transcribe. Larger models take longer for transcription.")),
-          p("You can change the model without changing the audio, to try different results."),
+          p("You can change the model without changing the audio, to try different results. The small model is a usable version."),
           br(),
           #pre(id = "console"),
           br(),
@@ -89,11 +89,35 @@ ui <- fluidPage(
         mainPanel(
           
           # ACV: TODO put back in
-          #h2("Audio"),
-          #howlerModuleUI(id = "sound", audio_files),
+          h2("Audio"),
+          div(
+            class = "howler-module",
+            style = paste0("width:", "400px", ";"),
+            howler(
+              elementId = "sound", 
+              tracks = audio_files,
+              auto_continue = TRUE,
+              auto_loop = TRUE,
+              seek_ping_rate = 1000
+            ),
+            div(
+              class = "howler-module-container",
+              howlerPlayPauseButton("sound"),
+              tags$span(howlerSeekSlider("sound")),
+              span(
+                class = "howler-module-duration",
+                "Duration:",
+                textOutput("sound_seek", container = tags$strong, inline = TRUE),
+                "/",
+                textOutput("sound_duration", container = tags$strong, inline = TRUE)
+              ),
+              div(
+                class = "howler-module-volume",howlerVolumeSlider("sound"))
+            ),
+          ),
           h2("Transcription output"),
           textOutput("language"),
-          verbatimTextOutput("result")
+          verbatimTextOutput("result", placeholder = TRUE)
           
         )
     )
@@ -102,19 +126,37 @@ ui <- fluidPage(
 # Server ----
 server <- function(input, output, session) {
   
-  
   observe({
-    req(FALSE)
+    #req(FALSE)
     req(input$audiofile)
     
-      cat(paste("Workingfile:", input$audiofile$datapath))
+      #message(paste("Workingfile:", input$audiofile$datapath))
       addResourcePath("upload_audio", dirname(input$audiofile$datapath))
       
       # ACV TODO: fix uploaded audio
-      howler::addTrack("sound", paste0("upload_audio/", basename(input$audiofile$datapath)))
-      
+      outfile <- paste0("upload_audio/", basename(input$audiofile$datapath))
+      #message(outfile)
+                        
+      howler::addTrack("sound", outfile)
+      howler::changeTrack("sound", outfile)
+      howler::pauseHowl("sound")
     })
   
+  output$sound_duration <- renderText({
+    sprintf(
+      "%02d:%02.0f",
+      input$sound_duration %/% 60,
+      input$sound_duration %% 60
+    )
+  })
+  
+  output$sound_seek <- renderText({
+    sprintf(
+      "%02d:%02.0f",
+      input$sound_seek %/% 60,
+      input$sound_seek %% 60
+    )
+  })
 
   # prepare the UI ----
   shinyjs::disable("transcribe")
@@ -162,11 +204,7 @@ server <- function(input, output, session) {
     text_output(out)
   })
   
-  output$player <- renderUI({
-    req(input$audiofile)
-    tags$audio(src = input$audiofile$datapath, type = "audio/mpeg", autoplay = NA, controls = NA)
-  })
-  
+
   output$language <- renderText({
     req(input$audiofile)
     req(model())
