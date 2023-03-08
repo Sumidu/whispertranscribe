@@ -16,6 +16,8 @@ renv::restore()
 # This will setup the python environment and install the required libraries
 library(reticulate)
 
+message("ffmpeg must be installed!")
+
 # install python 3.8.16
 install_python(version = "3.8")
 
