@@ -8,3 +8,6 @@ def detectlang(file, model):
   mel = whisper.log_mel_spectrogram(audio).to(model.device)
   _, probs = model.detect_language(mel)
   return probs
+
+
+#detectlang("../input/test.mp3", whisper.load_model("tiny"))
