@@ -31,18 +31,17 @@ if(dir.exists(miniconda_path())){
 }
 message(paste("Using",conda_version()))
 
-env_name <- "r-whispertranscribe"
 
-if(conda_list() %>% filter(name==env_name) %>% nrow() > 0){
+if(conda_list() %>% filter(name==config$env_name) %>% nrow() > 0){
   message("Matching environment found.")
 } else {
   message("Creating conda environment...")
-  conda_create(env_name)
+  conda_create(config$env_name)
   message("Installing whisper using pip...")
-  conda_install(env_name, c("openai-whisper"), pip = TRUE)
+  conda_install(config$env_name, c("openai-whisper"), pip = TRUE, pip_options = "-U")
 }
 
-use_condaenv(env_name)
+use_condaenv(config$env_name)
 
 whisper <- import("whisper")
 model <- whisper$load_model("tiny")
