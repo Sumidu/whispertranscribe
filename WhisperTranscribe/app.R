@@ -8,7 +8,7 @@
 #
 
 
-
+library(tidyverse)
 library(shiny)
 library(shinydashboard)
 library(shinyjs)
@@ -19,6 +19,7 @@ source("../R/timecodes.R")
 
 # calls config from yaml
 config <- config::get()
+use_python("/opt/homebrew/bin/python3.8")
 
 # configuring maximung size of audio-file
 maxsize <- config$shiny_file_size_limit * 1024^2 # 50 MB
@@ -28,19 +29,22 @@ options(shiny.maxRequestSize = maxsize)
 env_name <- config$env_name
 
 # flexible package manager
-if(config$package_manager=="conda"){
-  message("Using conda...")
-  if(conda_list() %>% filter(name==env_name) %>% nrow() < 0){
-    stop("Please setup the python virtual environment first. See setup.r.")
+if(FALSE){
+  
+  if(config$package_manager=="conda"){
+    message("Using conda...")
+    if(conda_list() %>% filter(name==env_name) %>% nrow() < 0){
+      stop("Please setup the python virtual environment first. See setup.r.")
+    }
+    use_condaenv(env_name)  
+  } else {
+    message("Using virtualenv...")
+    # cancel startup if virtual environment does not exist.
+    if(!reticulate::virtualenv_exists(env_name)){
+      stop("Please setup the python virtual environment first. See setup.r.")
+    }
+    use_virtualenv(env_name)
   }
-  use_condaenv(env_name)  
-} else {
-  message("Using virtualenv...")
-  # cancel startup if virtual environment does not exist.
-  if(!reticulate::virtualenv_exists(env_name)){
-    stop("Please setup the python virtual environment first. See setup.r.")
-  }
-  use_virtualenv(env_name)
 }
 
 # load whisper and get list of models

@@ -41,7 +41,7 @@ py_version()
 # did it work?
 py_list_packages(envname = env_name)
 
-
+#use_python("/opt/homebrew/bin/python3.8")
 # import libraries
 whisper <- reticulate::import("whisper")
 
