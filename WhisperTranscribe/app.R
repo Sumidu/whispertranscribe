@@ -34,7 +34,6 @@ use_virtualenv(env_name)
 whisper <- import("whisper")
 modellist <- whisper$available_models()
 
-
 audio_files_dir <- here::here("WhisperTranscribe","audio")
 addResourcePath("sample_audio", audio_files_dir)
 audio_files <- file.path("sample_audio", list.files(audio_files_dir, ".mp3$"))
@@ -169,8 +168,15 @@ server <- function(input, output, session) {
       incProgress(0.25, detail = paste("Loading bar will not move. This may take a while."))
       
       # load the model into the reactive val
+      start_time <- Sys.time()
       model(whisper$load_model(input$selected_model))
-      
+      end_time <- Sys.time()
+      showModal(modalDialog(
+        title = "Load complete",
+        paste("Model loaded in", lubridate::as.duration(end_time-start_time)),
+        easyClose = TRUE,
+        footer = NULL
+      ))
       incProgress(1, detail = paste("Model loaded."))
     })
     shinyjs::enable("transcribe")
@@ -188,10 +194,18 @@ server <- function(input, output, session) {
           
           incProgress(0.25, detail = paste("Loading bar will not move. This may take a while"))
           
-          # transcribe the audio
+          # transcribe the audio ----
+          start_time <- Sys.time()
           out <- model()$transcribe(input$audiofile$datapath)
-          
-          incProgress(1, detail = paste("Transcription finished..."))
+          end_time <- Sys.time()
+          message(paste("Transcription took", lubridate::as.duration(end_time-start_time)))
+          incProgress(1, detail = paste("Transcription finished in", lubridate::as.duration(end_time-start_time)))
+          showModal(modalDialog(
+            title = "Transcription complete",
+            paste("Transcription finished in", lubridate::as.duration(end_time-start_time)),
+            easyClose = TRUE,
+            footer = NULL
+          ))
         })
       },
       error = function(e) {
