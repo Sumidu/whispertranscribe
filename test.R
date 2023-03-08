@@ -14,6 +14,7 @@ message(paste("Env-name:", env_name))
 
 # This will setup the python environment and install the required libraries
 library(reticulate)
+library(tidyverse)
 
 # flexible package manager
 if(config$package_manager=="conda"){
@@ -24,11 +25,12 @@ if(config$package_manager=="conda"){
   use_condaenv(env_name)  
 } else {
   message("Using virtualenv...")
+  reticulate::use_python_version("3.8.16")
   # cancel startup if virtual environment does not exist.
   if(!reticulate::virtualenv_exists(env_name)){
     stop("Please setup the python virtual environment first. See setup.r.")
   }
-  use_virtualenv(env_name)
+  reticulate::use_virtualenv(env_name)
 }
 
 
@@ -42,15 +44,17 @@ py_list_packages(envname = env_name)
 
 # import libraries
 whisper <- reticulate::import("whisper")
-certifi <- reticulate::import("certifi")
-
 
 # actual-test
 model <- whisper$load_model("tiny")
 out <- whisper$transcribe(model, "input/test.mp3")
 
+
 if(out[["text"]]==" That's the test for the shiny app."){
-  message("Success")
+  message("--- Success ---- ")
+  message("--- Success ---- ")
+  message("--- Success ---- ")
+  message("--- Success ---- ")
 }
 
 
