@@ -241,7 +241,7 @@ server <- function(input, output, session) {
       if(input$timecodes) {
         out <- text_output()$segments
         
-        results <- c()
+        results <- c(" ")
         
         for(i in 1:length(out)){
           

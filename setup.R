@@ -9,7 +9,9 @@
 # See the end of this file for a list of common problems.
 
 
-
+if(is.null(installed.packages("renv"))){
+  install.packages("renv")
+}
 # This will restore the r_environment from the lockfile
 renv::restore()
 
@@ -20,6 +22,9 @@ message("ffmpeg must be installed!")
 
 # install python 3.8.16
 install_python(version = "3.8")
+
+
+# if python install fails on M1 Mac, install open ssl using brew can help
 
 py_config()
 py_version()
@@ -51,31 +56,3 @@ if(macos & py_version()=="3.8"){
 
 
 
-# this activates the library
-use_virtualenv(env_name)
-
-
-
-# did it work?
-py_list_packages(envname = env_name)
-
-
-# import libraries
-whisper <- reticulate::import("whisper")
-certifi <- reticulate::import("certifi")
-# did it work?
-# if not and in RStudio, check under Global options whether the correct virtual env 
-# is activated
-
-# test
-model <- whisper$load_model("tiny")
-out <- whisper$transcribe(model, "input/test.mp3")
-out[["text"]]$text
-
-
-# Common errors ----
-## Here are some common errors that can happen 
-
-## SSL Error on a mac?
-# https://stackoverflow.com/questions/52805115/certificate-verify-failed-unable-to-get-local-issuer-certificate
-## find `install certificates` in the python folder on your system
