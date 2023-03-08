@@ -9,6 +9,9 @@
 # See the end of this file for a list of common problems.
 
 
+
+stop("OLD CONFIG DO NOT USE TEMPORARILY")
+
 if(is.null(installed.packages("renv"))){
   install.packages("renv")
 }
