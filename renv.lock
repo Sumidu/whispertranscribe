@@ -1,6 +1,6 @@
 {
   "R": {
-    "Version": "4.2.1",
+    "Version": "4.1.2",
     "Repositories": [
       {
         "Name": "CRAN",
@@ -237,6 +237,16 @@
       "Repository": "CRAN",
       "Hash": "2ba81b120c1655ab696c935ef33ea716",
       "Requirements": []
+    },
+    "config": {
+      "Package": "config",
+      "Version": "0.3.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "31d77b09f63550cee9ecb5a08bf76e8f",
+      "Requirements": [
+        "yaml"
+      ]
     },
     "cpp11": {
       "Package": "cpp11",
@@ -1170,6 +1180,18 @@
         "sourcetools",
         "withr",
         "xtable"
+      ]
+    },
+    "shinydashboard": {
+      "Package": "shinydashboard",
+      "Version": "0.7.2",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "e418b532e9bb4eb22a714b9a9f1acee7",
+      "Requirements": [
+        "htmltools",
+        "promises",
+        "shiny"
       ]
     },
     "shinyjs": {
