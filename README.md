@@ -49,3 +49,7 @@ choco install ffmpeg
 # on Windows using Scoop (https://scoop.sh/)
 scoop install ffmpeg
 ```
+
+
+
+If you are using conda and cannot find ffmpeg, it helps to directly install ffmpeg from the conda command line in the bin directory of the conda-environment by calling `conda install ffmpeg` in the directory given by `pyconfig()` from the `test.R`.
