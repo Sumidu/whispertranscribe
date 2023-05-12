@@ -2,7 +2,7 @@
 default:
   package_manager: "conda"
   env_name: "r-whispertranscribe"
-  shiny_file_size_limit: 50 # in megabyte
+  shiny_file_size_limit: 100 # in megabyte
   python_version: 3.8.16
   python_path: "/opt/homebrew/bin/python3.8"
 
